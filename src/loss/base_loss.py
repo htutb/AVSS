@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
 import torch
 from torch import Tensor
+import torch.nn as nn
 
-class BaseLoss(ABC):
+
+class BaseLoss(nn.Module, ABC):
     """
     Base class for all losses
     """
@@ -12,6 +14,7 @@ class BaseLoss(ABC):
         Args:
             name (str | None): loss name
         """
+        super().__init__()
         self.name = name if name is not None else type(self).__name__
 
     @abstractmethod
@@ -23,7 +26,7 @@ class BaseLoss(ABC):
         raise NotImplementedError
 
 
-    def __call__(
+    def forward(
         self,
         s1_pred: Tensor,
         s2_pred: Tensor,

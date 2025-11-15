@@ -31,8 +31,8 @@ class ConvolutionBlock(nn.Module):
         self.act2 = nn.PReLU()
         self.norm2 = GlobalLayerNorm(H)
 
-        self.conv_out = nn.Conv1d(in_channels=H, out_channels=B)
-        self.conv_skip = nn.Conv1d(in_channels=H, out_channels=Sc)
+        self.conv_out = nn.Conv1d(in_channels=H, out_channels=B, kernel_size=1)
+        self.conv_skip = nn.Conv1d(in_channels=H, out_channels=Sc, kernel_size=1)
 
     def forward(self, x: Tensor) -> Tensor:
         x_1 = self.norm1(self.act1(self.conv1(x)))
