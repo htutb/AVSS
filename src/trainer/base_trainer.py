@@ -2,6 +2,7 @@ from abc import abstractmethod
 
 import torch
 from numpy import inf
+from torch import amp
 from torch.nn.utils import clip_grad_norm_
 from tqdm.auto import tqdm
 
@@ -22,6 +23,7 @@ class BaseTrainer:
         metrics,
         optimizer,
         lr_scheduler,
+        grad_accum_steps,
         text_encoder,
         config,
         device,
@@ -72,8 +74,11 @@ class BaseTrainer:
         self.criterion = criterion
         self.optimizer = optimizer
         self.lr_scheduler = lr_scheduler
-        self.text_encoder = text_encoder
         self.batch_transforms = batch_transforms
+
+        self.scaler = amp.GradScaler(enabled=(device == self.device))
+
+        self.grad_accum_steps = grad_accum_steps
 
         # define dataloaders
         self.train_dataloader = dataloaders["train"]
@@ -212,6 +217,7 @@ class BaseTrainer:
                 batch = self.process_batch(
                     batch,
                     metrics=self.train_metrics,
+                    batch_idx=batch_idx,
                 )
             except torch.cuda.OutOfMemoryError as e:
                 if self.skip_oom:

@@ -1,5 +1,3 @@
-from src.model.ConvTasNet import ConvTasNet
+from src.model.ConvTasNet.convtasnet import ConvTasNet
 
-__all__ = [
-    "ConvTasNet"
-]
+__all__ = ["ConvTasNet"]

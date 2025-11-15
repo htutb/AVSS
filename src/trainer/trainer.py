@@ -3,8 +3,9 @@ from pathlib import Path
 import pandas as pd
 
 from src.logger.utils import plot_spectrogram
+from src.metrics.complexity_metrics import summarize_model_performance
+from src.metrics.metrics import *
 from src.metrics.tracker import MetricTracker
-from src.metrics.utils import calc_cer, calc_wer
 from src.trainer.base_trainer import BaseTrainer
 
 
@@ -13,7 +14,7 @@ class Trainer(BaseTrainer):
     Trainer class. Defines the logic of batch logging and processing.
     """
 
-    def process_batch(self, batch, metrics: MetricTracker):
+    def process_batch(self, batch, metrics: MetricTracker, batch_idx: int):
         """
         Run batch through the model, compute metrics, compute loss,
         and do training step (during training stage).
@@ -38,27 +39,53 @@ class Trainer(BaseTrainer):
         metric_funcs = self.metrics["inference"]
         if self.is_train:
             metric_funcs = self.metrics["train"]
+
+        if self.is_train and batch_idx % self.grad_accum_steps == 0:
             self.optimizer.zero_grad()
 
-        outputs = self.model(**batch)
-        batch.update(outputs)
+        with torch.autocast(device_type=self.device):
+            outputs = self.model(**batch)
+            batch.update(outputs)
 
-        all_losses = self.criterion(**batch)
-        batch.update(all_losses)
+            all_losses = self.criterion(**batch)
+            batch.update(all_losses)
 
         if self.is_train:
-            batch["loss"].backward()  # sum of all losses is always called loss
-            self._clip_grad_norm()
-            self.optimizer.step()
-            if self.lr_scheduler is not None:
-                self.lr_scheduler.step()
+            # batch["loss"].backward()  # sum of all losses is always called loss
+            loss = batch["loss"] / self.grad_accum_steps
+            self.scaler.scale(loss).backward()
+
+            for key in ["loss", "log_probs", "log_probs_length"]:
+                if key in batch and torch.is_tensor(batch[key]):
+                    batch[key] = batch[key].detach()
+
+            if (batch_idx + 1) % self.grad_accum_steps == 0:
+                self.scaler.unscale_(self.optimizer)
+                self.clip_grad_norm()
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
+
+                if self.lr_scheduler is not None:
+                    self.lr_scheduler.step()
 
         # update metrics for each loss (in case of multiple losses)
-        for loss_name in self.config.writer.loss_names:
-            metrics.update(loss_name, batch[loss_name].item())
+        with torch.no_grad():
+            for loss_name in self.config.writer.loss_names:
+                metrics.update(loss_name, batch[loss_name])
+                if self.writer is not None and self._is_main():
+                    mode = "train" if self.is_train else "val"
+                    self.writer.add_scalar(f"{mode}/{loss_name}", batch[loss_name])
 
-        for met in metric_funcs:
-            metrics.update(met.name, met(**batch))
+            should_log_metrics = True
+            if not self.is_train:
+                n = self.config.trainer.log_inference_every_n_epochs
+                if self.epoch % n != 0:
+                    should_log_metrics = False
+
+            if should_log_metrics:
+                for met in metric_funcs:
+                    metrics.update(met.name, met(**batch))
+
         return batch
 
     def _log_batch(self, batch_idx, batch, mode="train"):
@@ -84,39 +111,53 @@ class Trainer(BaseTrainer):
             self.log_spectrogram(**batch)
             self.log_predictions(**batch)
 
-    def log_spectrogram(self, spectrogram, **batch):
-        spectrogram_for_plot = spectrogram[0].detach().cpu()
+    def log_spectrogram(self, s1_spectrogram, s2_spectrogram, mix_spectrogram, **batch):
+        spectrogram_for_plot = s1_spectrogram[0].detach().cpu()
         image = plot_spectrogram(spectrogram_for_plot)
-        self.writer.add_image("spectrogram", image)
+        self.writer.add_image("s1_spectrogram", image)
+
+        spectrogram_for_plot = s2_spectrogram[0].detach().cpu()
+        image = plot_spectrogram(spectrogram_for_plot)
+        self.writer.add_image("s2_spectrogram", image)
+
+        spectrogram_for_plot = mix_spectrogram[0].detach().cpu()
+        image = plot_spectrogram(spectrogram_for_plot)
+        self.writer.add_image("mix_spectrogram", image)
 
     def log_predictions(
-        self, text, log_probs, log_probs_length, audio_path, examples_to_log=10, **batch
+        self,
+        s1_pred,
+        s2_pred,
+        s1_audio,
+        s2_audio,
+        mix_audio,
+        mix_path,
+        examples_to_log=10,
+        **batch,
     ):
         # TODO add beam search
         # Note: by improving text encoder and metrics design
         # this logging can also be improved significantly
 
-        argmax_inds = log_probs.cpu().argmax(-1).numpy()
-        argmax_inds = [
-            inds[: int(ind_len)]
-            for inds, ind_len in zip(argmax_inds, log_probs_length.numpy())
-        ]
-        argmax_texts_raw = [self.text_encoder.decode(inds) for inds in argmax_inds]
-        argmax_texts = [self.text_encoder.ctc_decode(inds) for inds in argmax_inds]
-        tuples = list(zip(argmax_texts, text, argmax_texts_raw, audio_path))
+        tuples = list(zip(s1_pred, s2_pred, s1_audio, s2_audio, mix_audio, mix_path))
 
         rows = {}
-        for pred, target, raw_pred, audio_path in tuples[:examples_to_log]:
-            target = self.text_encoder.normalize_text(target)
-            wer = calc_wer(target, pred) * 100
-            cer = calc_cer(target, pred) * 100
-
-            rows[Path(audio_path).name] = {
-                "target": target,
-                "raw prediction": raw_pred,
-                "predictions": pred,
-                "wer": wer,
-                "cer": cer,
+        for s1_p, s2_p, s1_a, s2_a, mix_a, mix_p in tuples[:examples_to_log]:
+            rows[Path(mix_p).name] = {
+                "speaker_1_audio": s1_a,
+                "speaker_2_audio": s2_a,
+                "mixed_audio": mix_a,
+                "speaker_1_separated": s1_p,
+                "speaker_2_separated": s2_p,
+                "si_snr_speaker_1": SI_SNR_Metric(s1_p, s1_a),
+                "si_snr_speaker_2": SI_SNR_Metric(s2_p, s2_a),
+                "si_sdr_speaker_1": SI_SDR_Metric(s1_p, s1_a),
+                "si_sdr_speaker_2": SI_SDR_Metric(s2_p, s2_a),
+                "snri": SNRi_Metric(mix_a, s1_p, s2_p, s1_a, s2_a),
+                "pesq_speaker_1": PESQ_Metric(s1_p, s1_a),
+                "pesq_speaker_2": PESQ_Metric(s2_p, s2_a),
+                "stoi_speaker_1": STOI_Metric(s1_p, s1_a),
+                "stoi_speaker_2": STOI_Metric(s2_p, s2_a),
             }
         self.writer.add_table(
             "predictions", pd.DataFrame.from_dict(rows, orient="index")

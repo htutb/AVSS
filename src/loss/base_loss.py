@@ -1,27 +1,29 @@
 from abc import ABC, abstractmethod
+
 import torch
 from torch import Tensor
 
-class BaseLoss(ABC):
+
+class BaseLoss(torch.nn.Module, ABC):
     """
     Base class for all losses
     """
 
-    def __init__(self, name=None,  *args, **kwargs):
+    def __init__(self, name=None, *args, **kwargs):
         """
         Args:
             name (str | None): loss name
         """
+        super().__init__()
         self.name = name if name is not None else type(self).__name__
 
     @abstractmethod
     def calc_loss(self, pred: Tensor, target: Tensor) -> Tensor:
         """
         Input: pred, target: [B, T]
-        Output: loss values 
+        Output: loss values
         """
         raise NotImplementedError
-
 
     def __call__(
         self,
@@ -36,7 +38,7 @@ class BaseLoss(ABC):
         s1_pred, s2_pred:  predicted waveforms [B, T]
         s1_audio, s2_audio: target waveforms [B, T]
         """
-        m11 = self.calc_loss(s1_pred, s1_audio) 
+        m11 = self.calc_loss(s1_pred, s1_audio)
         m22 = self.calc_loss(s2_pred, s2_audio)
         fn_1 = 0.5 * (m11 + m22)
 
@@ -44,6 +46,4 @@ class BaseLoss(ABC):
         m21 = self.calc_loss(s2_pred, s1_audio)
         fn_2 = 0.5 * (m12 + m21)
         final = torch.min(fn_1, fn_2)
-        return {'loss': torch.mean(final)}
-
-
+        return {"loss": torch.mean(final)}

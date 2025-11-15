@@ -54,6 +54,11 @@ Follow these steps to install the project:
    pre-commit install
    ```
 
+3. Set cometml api key locally
+   ```bash
+   $env:COMET_API_KEY="wqjSfA48jdUyifULofd0j5U1m"
+   ```
+
 ## How To Use
 
 To train a model, run the following command:
