@@ -1,6 +1,6 @@
 import torch
 from torch import Tensor
-from torchmetrics.audio import ScaleInvariantSignalNoiseRatio
+from torchmetrics.functional.audio.snr import scale_invariant_signal_noise_ratio
 
 from src.loss.base_loss import BaseLoss
 
@@ -14,11 +14,9 @@ class SI_SNR_Loss(BaseLoss):
 
     def __init__(self):
         super().__init__()
-        # self.metric = ScaleInvariantSignalNoiseRatio(reduction='none')
-        self.metric = ScaleInvariantSignalNoiseRatio()
 
     def calc_loss(self, preds: Tensor, targets: Tensor) -> Tensor:
-        loss = -self.metric(preds, targets)
+        loss = -scale_invariant_signal_noise_ratio(preds, targets)
         return loss
 
 

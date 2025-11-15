@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
 
 import torch
+import torch.nn as nn
 from torch import Tensor
 
 
-class BaseLoss(torch.nn.Module, ABC):
+class BaseLoss(nn.Module, ABC):
     """
     Base class for all losses
     """
@@ -25,7 +26,7 @@ class BaseLoss(torch.nn.Module, ABC):
         """
         raise NotImplementedError
 
-    def __call__(
+    def forward(
         self,
         s1_pred: Tensor,
         s2_pred: Tensor,
