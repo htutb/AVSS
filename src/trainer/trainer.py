@@ -72,7 +72,7 @@ class Trainer(BaseTrainer):
         with torch.no_grad():
             for loss_name in self.config.writer.loss_names:
                 metrics.update(loss_name, batch[loss_name])
-                if self.writer is not None and self._is_main():
+                if self.writer is not None:
                     mode = "train" if self.is_train else "val"
                     self.writer.add_scalar(f"{mode}/{loss_name}", batch[loss_name])
 

@@ -1,5 +1,6 @@
 import torch
 
+
 def collate_fn(dataset_items: list[dict]):
     """
     Collate and pad fields in the dataset items.
@@ -35,9 +36,9 @@ def collate_fn(dataset_items: list[dict]):
     mouth2_paths = [item["mouth2_path"] for item in dataset_items]
 
     return {
-        "s1_spectrogram": s1_specs,
-        "s2_spectrogram": s2_specs,
-        "mix_spectrogram": mix_specs,
+        "s1_spectrogram": s1_specs.squeeze(),
+        "s2_spectrogram": s2_specs.squeeze(),
+        "mix_spectrogram": mix_specs.squeeze(),
         "s1_audio": s1_audios,
         "s2_audio": s2_audios,
         "mix_audio": mix_audios,

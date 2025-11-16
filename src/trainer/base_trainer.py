@@ -24,7 +24,6 @@ class BaseTrainer:
         optimizer,
         lr_scheduler,
         grad_accum_steps,
-        text_encoder,
         config,
         device,
         dataloaders,

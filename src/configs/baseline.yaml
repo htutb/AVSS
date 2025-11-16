@@ -22,6 +22,7 @@ trainer:
   log_step: 50
   n_epochs: 50
   epoch_len: 200
+  grad_accum_steps: 4
   device_tensors: ['s1_spectrogram', 's2_spectrogram', 'mix_spectrogram', 's1_audio', 's2_audio', 'mix_audio', 's1_mouth', 's2_mouth'] # which tensors should be on device (ex. GPU)
   resume_from: null # null or path to the checkpoint dir with *.pth and config.yaml
   device: auto # device name or "auto"

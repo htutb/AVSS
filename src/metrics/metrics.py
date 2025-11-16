@@ -18,8 +18,8 @@ class SI_SNR_Metric(BaseMetric):
     preds, targets: [B, T]
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def calc_metric(self, preds: Tensor, targets: Tensor) -> Tensor:
         return scale_invariant_signal_noise_ratio(preds, targets)
@@ -32,9 +32,10 @@ class SNRi_Metric(nn.Module):
     Output: metric
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, name, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.si_snr_pit = SI_SNR_Metric()
+        self.name = name
 
     def forward(
         self,

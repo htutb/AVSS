@@ -1,12 +1,13 @@
-from src.model.ConvTasNet.encoder import ConvTasNetEncoder
-from src.model.ConvTasNet.separator import ConvTasNetSeparator
-from src.model.ConvTasNet.decoder import ConvTasNetDecoder
 import torch.nn as nn
 from torch import Tensor
 
+from src.model.ConvTasNet.decoder import ConvTasNetDecoder
+from src.model.ConvTasNet.encoder import ConvTasNetEncoder
+from src.model.ConvTasNet.separator import ConvTasNetSeparator
+
 
 class ConvTasNet(nn.Module):
-    '''
+    """
     ConvTasNet model with Video Support (https://arxiv.org/pdf/1809.07454)
 
     Args:
@@ -22,28 +23,34 @@ class ConvTasNet(nn.Module):
 
     Input: [batch, 1, T]
     Output: dict, where s{i} -> [:, i, :] (i-th speaker audio)
-    '''
+    """
 
-    def __init__(self, 
-            N: int = 512, 
-            L: int = 16, 
-            B: int = 128, 
-            Sc: int = 128, 
-            H: int = 512, 
-            P: int = 3, 
-            X: int = 8, 
-            R: int = 3, 
-            C: int = 2,
-        ):
+    def __init__(
+        self,
+        N: int = 512,
+        L: int = 16,
+        B: int = 128,
+        Sc: int = 128,
+        H: int = 512,
+        P: int = 3,
+        X: int = 8,
+        R: int = 3,
+        C: int = 2,
+    ):
         super().__init__()
         self.encoder = ConvTasNetEncoder(N, L)
         self.separator = ConvTasNetSeparator(N, B, Sc, H, P, X, R, C)
         self.decoder = ConvTasNetDecoder(N, L)
 
     def forward(self, mix_audio: Tensor, **batch) -> dict:
-        mix_enc = self.encoder(mix_audio) # [batch, N, T_new]
-        masks = self.separator(mix_enc) # [batch, C, N, T_new]
-        masked_audios = mix_enc.unsqueeze(1) * masks # [batch, C, N, T_new]
-        separated_audios = self.decoder(masked_audios) # [batch, C, T]
+        # print(mix_audio.unsqueeze(1).shape)
+        mix_audio = mix_audio.unsqueeze(1)  # [batch, 1, T]
+        mix_enc = self.encoder(mix_audio)  # [batch, N, T_new]
+        masks = self.separator(mix_enc)  # [batch, C, N, T_new]
+        masked_audios = mix_enc.unsqueeze(1) * masks  # [batch, C, N, T_new]
+        separated_audios = self.decoder(masked_audios)  # [batch, C, T]
 
-        return {'s1_pred': separated_audios[:, 0, :], 's2_pred': separated_audios[:, 1, :]}
+        return {
+            "s1_pred": separated_audios[:, 0, :],
+            "s2_pred": separated_audios[:, 1, :],
+        }

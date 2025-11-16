@@ -73,6 +73,7 @@ def main(config):
         writer=writer,
         batch_transforms=batch_transforms,
         skip_oom=config.trainer.get("skip_oom", True),
+        grad_accum_steps=config.trainer.get("grad_accum_steps", 1),
     )
 
     trainer.train()
