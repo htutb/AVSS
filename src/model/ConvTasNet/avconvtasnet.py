@@ -24,6 +24,13 @@ class AVConvTasNet(nn.Module):
         X (int): number of conv blocks in repeat
         R (int): number of repeats
         C (int): number of speakers
+        fusion_method (str): defines how audio and video embeddings will be fused
+        audio_len (int): audio length
+        interpolation_method (str): defines the way video embeddings are interpolated to audio embeddings length
+        d_model (int): hidden dimension for attention fusion
+        num_heads (int): amount of heads in attention module in attention fusion
+        dropout (float): dropout prob in attention module in attention fusion
+        bidirectional (bool): efines whether only audio embeddings are enriched through attention or both 
 
     Input: [batch, T]
     Output: dict, where s{i} -> [:, i, :] (i-th speaker audio)
@@ -74,7 +81,7 @@ class AVConvTasNet(nn.Module):
                                         d_model=d_model,
                                         num_heads=num_heads,
                                         dropout=dropout,
-                                        bidirectional=False
+                                        bidirectional=bidirectional
                                     )
 
         self.encoder = ConvTasNetEncoder(N, L)
