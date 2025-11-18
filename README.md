@@ -64,6 +64,8 @@ Follow these steps to install the project:
 To train a model, run the following command:
 
 ```bash
+pip uninstall -y torch torchvision torchaudio
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 python3 train.py -cn=CONFIG_NAME HYDRA_CONFIG_ARGUMENTS
 ```
 
@@ -73,8 +75,6 @@ To run inference (evaluate the model or save predictions):
 
 ```bash
 python3 inference.py HYDRA_CONFIG_ARGUMENTS
-pip uninstall -y torch torchvision torchaudio
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 ```
 
 ## Credits
