@@ -4,7 +4,6 @@ import pandas as pd
 import torch
 
 from src.logger.utils import plot_spectrogram
-from src.metrics.complexity_metrics import summarize_model_performance
 from src.metrics.metrics import *
 from src.metrics.tracker import MetricTracker
 from src.trainer.base_trainer import BaseTrainer
@@ -52,19 +51,13 @@ class Trainer(BaseTrainer):
             batch.update(all_losses)
 
         if self.is_train:
-            # batch["loss"].backward()  # sum of all losses is always called loss
+            # sum of all losses is always called loss
             loss = batch["loss"] / self.grad_accum_steps
             self.scaler.scale(loss).backward()
 
-            for key in ["loss", "log_probs", "log_probs_length"]:
-                if key in batch and torch.is_tensor(batch[key]):
-                    batch[key] = batch[key].detach()
-            # print(batch_idx, (batch_idx + 1) % self.grad_accum_steps)
             if batch_idx % self.grad_accum_steps == 0:
                 self.scaler.unscale_(self.optimizer)
-                # print("Clipping gradients...")
                 self._clip_grad_norm()
-                # print(1, self._get_grad_norm())
                 self.scaler.step(self.optimizer)
                 self.scaler.update()
 
@@ -89,7 +82,6 @@ class Trainer(BaseTrainer):
             if should_log_metrics:
                 for met in metric_funcs:
                     metrics.update(met.name, met(**batch))
-        # print(2, self._get_grad_norm())
         return batch
 
     def _log_batch(self, batch_idx, batch, mode="train"):
@@ -136,12 +128,9 @@ class Trainer(BaseTrainer):
         s2_audio,
         mix_audio,
         mix_path,
-        examples_to_log=10,
+        examples_to_log=5,
         **batch,
     ):
-        # TODO add beam search
-        # Note: by improving text encoder and metrics design
-        # this logging can also be improved significantly
 
         tuples = list(zip(s1_pred, s2_pred, s1_audio, s2_audio, mix_audio, mix_path))
         si_snr = SI_SNR_Metric()

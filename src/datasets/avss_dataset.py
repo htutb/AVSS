@@ -1,10 +1,8 @@
 import json
 import os
-import shutil
 from pathlib import Path
 
 import torchaudio
-import wget
 from tqdm import tqdm
 import zipfile
 
@@ -35,14 +33,21 @@ class AVSSDataset(BaseDataset):
           ├── {speaker_id}.npz
     """
 
-    def __init__(self, part: str, data_dir=None, *args, **kwargs):
+    def __init__(self, part: str, data_dir=None, embed_dir=None, *args, **kwargs):
         assert part in ["train", "val", "test"], \
             "Аргумент part должен быть одним из ['train', 'val', 'test']"
 
         if data_dir is None:
             data_dir = ROOT_PATH / "data" / "datasets" / "avss"
             data_dir.mkdir(exist_ok=True, parents=True)
-        self._data_dir = data_dir
+        self._data_dir = Path(data_dir)
+
+        if embed_dir is None:
+            self._embed_dir = ROOT_PATH / "embedding"
+        else:
+            self._embed_dir = Path(embed_dir)
+
+        self.embed_exists = self._embed_dir.exists() and any(self._embed_dir.iterdir())
 
         index = self._get_or_load_index(part)
         super().__init__(index, *args, **kwargs)
@@ -128,6 +133,14 @@ class AVSSDataset(BaseDataset):
             mouth1_path = mouths_root / f"{first_id}.npz"
             mouth2_path = mouths_root / f"{second_id}.npz"
 
+            if self.embed_exists:
+                s1_emb_path = self._embed_dir / f"{first_id}.npz"
+                s2_emb_path = self._embed_dir / f"{second_id}.npz"
+            else:
+                s1_emb_path = None
+                s2_emb_path = None
+
+
             if not mix_file.exists():
                 continue
 
@@ -140,6 +153,8 @@ class AVSSDataset(BaseDataset):
                 "s2_path": str(s2_path.resolve()) if s2_path else None,
                 "mouth1_path": str(mouth1_path.resolve()) if mouth1_path.exists() else None,
                 "mouth2_path": str(mouth2_path.resolve()) if mouth2_path.exists() else None,
+                "s1_emb_path": str(s1_emb_path.resolve()) if (s1_emb_path is not None and s1_emb_path.exists()) else None,
+                "s2_emb_path": str(s2_emb_path.resolve()) if (s2_emb_path is not None and s2_emb_path.exists()) else None,
                 "audio_len": length,
                 "speakers": [first_id, second_id],
             }
