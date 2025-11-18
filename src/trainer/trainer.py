@@ -3,7 +3,6 @@ from pathlib import Path
 import pandas as pd
 
 from src.logger.utils import plot_spectrogram
-from src.metrics.complexity_metrics import summarize_model_performance
 from src.metrics.metrics import *
 from src.metrics.tracker import MetricTracker
 from src.trainer.base_trainer import BaseTrainer
@@ -54,10 +53,6 @@ class Trainer(BaseTrainer):
             # batch["loss"].backward()  # sum of all losses is always called loss
             loss = batch["loss"] / self.grad_accum_steps
             self.scaler.scale(loss).backward()
-
-            for key in ["loss", "log_probs", "log_probs_length"]:
-                if key in batch and torch.is_tensor(batch[key]):
-                    batch[key] = batch[key].detach()
 
             if (batch_idx + 1) % self.grad_accum_steps == 0:
                 self.scaler.unscale_(self.optimizer)
@@ -132,12 +127,9 @@ class Trainer(BaseTrainer):
         s2_audio,
         mix_audio,
         mix_path,
-        examples_to_log=10,
+        examples_to_log=5,
         **batch,
     ):
-        # TODO add beam search
-        # Note: by improving text encoder and metrics design
-        # this logging can also be improved significantly
 
         tuples = list(zip(s1_pred, s2_pred, s1_audio, s2_audio, mix_audio, mix_path))
 
@@ -151,8 +143,6 @@ class Trainer(BaseTrainer):
                 "speaker_2_separated": s2_p,
                 "si_snr_speaker_1": SI_SNR_Metric(s1_p, s1_a),
                 "si_snr_speaker_2": SI_SNR_Metric(s2_p, s2_a),
-                "si_sdr_speaker_1": SI_SDR_Metric(s1_p, s1_a),
-                "si_sdr_speaker_2": SI_SDR_Metric(s2_p, s2_a),
                 "snri": SNRi_Metric(mix_a, s1_p, s2_p, s1_a, s2_a),
                 "pesq_speaker_1": PESQ_Metric(s1_p, s1_a),
                 "pesq_speaker_2": PESQ_Metric(s2_p, s2_a),

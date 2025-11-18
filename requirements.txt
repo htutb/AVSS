@@ -12,6 +12,8 @@ pandas
 wandb
 comet_ml
 hydra-core
+gdown
+opencv-python
 
 black
 isort

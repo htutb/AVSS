@@ -22,13 +22,12 @@ def collate_fn(dataset_items: list[dict]):
     s2_audios = torch.stack([item["s2_audio"].squeeze(0) for item in dataset_items])
     mix_audios = torch.stack([item["mix_audio"].squeeze(0) for item in dataset_items])
 
-    # s1_mouths = torch.tensor([torch.tensor(item["mouth1"]) for item in dataset_items])
-    s1_mouths = torch.stack(
-        [torch.from_numpy(item["mouth1"]) for item in dataset_items]
+    s1_embs = torch.stack(
+        [torch.from_numpy(item["s1_emb"]) for item in dataset_items]
     )
-    # s2_mouths = torch.tensor([torch.tensor(item["mouth2"]) for item in dataset_items])
-    s2_mouths = torch.stack(
-        [torch.from_numpy(item["mouth2"]) for item in dataset_items]
+
+    s2_embs = torch.stack(
+        [torch.from_numpy(item["s2_emb"]) for item in dataset_items]
     )
 
     audio_paths = [item["mix_path"] for item in dataset_items]
@@ -42,8 +41,8 @@ def collate_fn(dataset_items: list[dict]):
         "s1_audio": s1_audios,
         "s2_audio": s2_audios,
         "mix_audio": mix_audios,
-        "s1_mouth": s1_mouths,
-        "s2_mouth": s2_mouths,
+        "s1_embs": s1_embs,
+        "s2_embs": s2_embs,
         "mix_path": audio_paths,
         "mouth1_path": mouth1_paths,
         "mouth2_path": mouth2_paths,
