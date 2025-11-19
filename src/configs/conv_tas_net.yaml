@@ -1,24 +1,27 @@
 defaults:
-  - model: conv_tas_net_linear
+  - model: conv_tas_net
   - writer: cometml
-  - metrics: example
-  - datasets: onebatchtest
-  - dataloader: example
+  - metrics: train_metrics
+  - datasets: train_val
+  - dataloader: 4070
   - transforms: example_only_instance
   - _self_
 optimizer:
   _target_: torch.optim.AdamW
   lr: 0.0003
 lr_scheduler:
-  _target_: torch.optim.lr_scheduler.CosineAnnealingLR
-  T_max: 5000
+  _target_: torch.optim.lr_scheduler.OneCycleLR
+  max_lr: 0.001
+  total_steps: 9360
+  anneal_strategy: 'cos'
+  pct_start: 0.1
 loss_function:
   _target_: src.loss.SI_SNR_Loss
 trainer:
-  log_step: 1
-  n_epochs: 4
-  epoch_len: 20
-  grad_accum_steps: 4
+  log_step: 10
+  n_epochs: 30
+  epoch_len:
+  grad_accum_steps: 1
   device_tensors: ['s1_spectrogram', 's2_spectrogram', 'mix_spectrogram', 's1_audio', 's2_audio', 'mix_audio', 's1_embs', 's2_embs'] # which tensors should be on device (ex. GPU)
   resume_from: # null or path to the checkpoint dir with *.pth and config.yaml
   device: auto # device name or "auto"
@@ -30,4 +33,4 @@ trainer:
   seed: 1
   log_inference_every_n_epochs: 1
   max_grad_norm: 5.0
-  # from_pretrained: 'saved/testing/checkpoint-epoch3.pth'
+  # from_pretrained: "checkpoint-epoch16.pth"

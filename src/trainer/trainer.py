@@ -62,7 +62,7 @@ class Trainer(BaseTrainer):
                 self.scaler.update()
 
                 if self.lr_scheduler is not None:
-                    self.lr_scheduler.step(loss)
+                    self.lr_scheduler.step()
         print(self.lr_scheduler.get_last_lr())
 
         # update metrics for each loss (in case of multiple losses)
@@ -131,7 +131,6 @@ class Trainer(BaseTrainer):
         examples_to_log=5,
         **batch,
     ):
-
         tuples = list(zip(s1_pred, s2_pred, s1_audio, s2_audio, mix_audio, mix_path))
         si_snr = SI_SNR_Metric()
         snri = SNRi_Metric(name="snri")
@@ -140,12 +139,12 @@ class Trainer(BaseTrainer):
 
         rows = {}
         for s1_p, s2_p, s1_a, s2_a, mix_a, mix_p in tuples[:examples_to_log]:
+            self.writer.add_audio("mix_audio", mix_a, 16000)
+            self.writer.add_audio("s1_groud_truth", s1_a, 16000)
+            self.writer.add_audio("s2_groud_truth", s2_a, 16000)
+            self.writer.add_audio("s1_separated", s1_p, 16000)
+            self.writer.add_audio("s2_separated", s2_p, 16000)
             rows[Path(mix_p).name] = {
-                "speaker_1_audio": s1_a,
-                "speaker_2_audio": s2_a,
-                "mixed_audio": mix_a,
-                "speaker_1_separated": s1_p,
-                "speaker_2_separated": s2_p,
                 "si_snr_speaker_1": si_snr.calc_metric(preds=s1_p, targets=s1_a),
                 "si_snr_speaker_2": si_snr.calc_metric(preds=s2_p, targets=s2_a),
                 "snri": snri.forward(mix_a, s1_p, s2_p, s1_a, s2_a),

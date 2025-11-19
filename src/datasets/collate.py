@@ -22,22 +22,17 @@ def collate_fn(dataset_items: list[dict]):
     s2_audios = torch.stack([item["s2_audio"].squeeze(0) for item in dataset_items])
     mix_audios = torch.stack([item["mix_audio"].squeeze(0) for item in dataset_items])
 
-    s1_embs = torch.stack(
-        [torch.from_numpy(item["s1_emb"]) for item in dataset_items]
-    )
+    s1_embs = torch.stack([torch.from_numpy(item["s1_emb"]) for item in dataset_items])
 
-    s2_embs = torch.stack(
-        [torch.from_numpy(item["s2_emb"]) for item in dataset_items]
-    )
+    s2_embs = torch.stack([torch.from_numpy(item["s2_emb"]) for item in dataset_items])
 
     audio_paths = [item["mix_path"] for item in dataset_items]
     mouth1_paths = [item["mouth1_path"] for item in dataset_items]
     mouth2_paths = [item["mouth2_path"] for item in dataset_items]
-
     return {
-        "s1_spectrogram": s1_specs.squeeze(),
-        "s2_spectrogram": s2_specs.squeeze(),
-        "mix_spectrogram": mix_specs.squeeze(),
+        "s1_spectrogram": s1_specs.squeeze(1),
+        "s2_spectrogram": s2_specs.squeeze(1),
+        "mix_spectrogram": mix_specs.squeeze(1),
         "s1_audio": s1_audios,
         "s2_audio": s2_audios,
         "mix_audio": mix_audios,

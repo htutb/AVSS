@@ -1,0 +1,2 @@
+_target_: src.model.AVConvTasNet
+fusion_method: "gated"

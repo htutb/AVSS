@@ -21,3 +21,5 @@ pre-commit
 # hydra
 wget
 thop
+gdown
+opencv-python
