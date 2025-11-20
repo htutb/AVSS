@@ -28,7 +28,7 @@ class DPTN(nn.Module):
     def __init__(self, N: int = 128, 
                 L: int = 8, # если плохо учится, то ставь 2
                 feature_dim: int = 64,
-                K: int = 200,
+                K: int = 199,
                 H: int = 100, 
                 nhead: int = 4, 
                 dropout: float = 0.0, 

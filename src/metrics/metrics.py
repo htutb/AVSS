@@ -47,16 +47,17 @@ class SNRi_Metric(nn.Module):
         s2_audio: Tensor,
         **batch
     ) -> Tensor:
-        predicted_snr = self.si_snr_pit(s1_pred, s2_pred, s1_audio, s2_audio)
+        
+        predicted_snr_s1 = scale_invariant_signal_noise_ratio(s1_pred, s1_audio) # [B]
+        predicted_snr_s2 = scale_invariant_signal_noise_ratio(s2_pred, s2_audio) # [B]
+        mix_s1_snr = scale_invariant_signal_noise_ratio(mix_audio, s1_audio) # [B]
+        mix_s2_snr = scale_invariant_signal_noise_ratio(mix_audio, s2_audio) # [B]
 
-        m1 = scale_invariant_signal_noise_ratio(mix_audio, s1_audio)
-        m2 = scale_invariant_signal_noise_ratio(mix_audio, s2_audio)
-        mix_snr = 0.5 * (m1 + m2)
-        mix_snr = mix_snr.mean()
+        improvement_s1 = predicted_snr_s1 - mix_s1_snr # [B]
+        improvement_s2 = predicted_snr_s2 - mix_s2_snr # [B]
 
-        improvement = predicted_snr - mix_snr
-        return improvement
-
+        improvement = torch.concat([improvement_s1, improvement_s2]).mean() 
+        return improvement 
 
 class PESQ_Metric(BaseMetric):
     """

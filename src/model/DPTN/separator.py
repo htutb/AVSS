@@ -22,7 +22,7 @@ class Segmentation(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
 
         chunks = x.unfold(dimension=2, size=self.K, step=self.H)  # [B, feature_dim, num_chunks, K] 
-        chunks = chunks.permute(0, 1, 3, 2)  # [B, feature_dim, K, num_chunks]
+        chunks = chunks.permute(0, 1, 3, 2).contiguous()  # [B, feature_dim, K, num_chunks]
 
         return chunks
     
@@ -96,10 +96,10 @@ class DPTNBlock(nn.Module):
         x = x.permute(0, 3, 2, 1).contiguous().view(B * num_chunks, K, feature_dim) # K - embed_dim
         x = self.intra_transformer(x) 
 
-        x = x.contiguous().view(B, num_chunks, K, feature_dim).permute(0, 2, 3, 1).view(B * K, num_chunks, feature_dim) # num_chunks - embed_dim
+        x = x.contiguous().view(B, num_chunks, K, feature_dim).permute(0, 2, 3, 1).contiguous().view(B * K, num_chunks, feature_dim) # num_chunks - embed_dim
         x = self.inter_transformer(x)
 
-        x = x.contiguous().view(B, K, num_chunks, feature_dim).permute(0, 3, 1, 2)
+        x = x.contiguous().view(B, K, num_chunks, feature_dim).permute(0, 3, 1, 2).contiguous()
         return x
     
 
@@ -156,7 +156,7 @@ class MaskCreator(nn.Module):
         self.sigmoid = nn.Sigmoid()
         self.sigmoid_conv = nn.Conv1d(in_channels= feature_dim, out_channels= feature_dim, kernel_size=1, bias=False)
         self.act = nn.ReLU()
-        self.mask_conv1x1 = nn.Conv1d(feature_dim, N, 1, bias=False)
+        self.mask_conv1x1 = nn.Conv1d(in_channels=feature_dim, out_channels=N, kernel_size=1, bias=False)
 
     def forward(self, x: Tensor) -> Tensor:
         BC, F, T_new = x.shape
