@@ -1,11 +1,12 @@
-from torch import nn, Tensor
+from torch import Tensor, nn
+
+from src.model.DPTN.decoder import DPTNDecoder
 from src.model.DPTN.encoder import DPTNEncoder
 from src.model.DPTN.separator import DPTNSeparator
-from src.model.DPTN.decoder import DPTNDecoder
 
 
 class DPTN(nn.Module):
-    '''
+    """
     Dual-Path Transformer Network (DPTN) for speech separation (https://arxiv.org/pdf/2007.13975)
 
     Args:
@@ -23,32 +24,35 @@ class DPTN(nn.Module):
 
     Input: [batch, T]
     Output: dict, where s{i} -> [:, i, :] (i-th speaker audio)
-    '''
+    """
 
-    def __init__(self, N: int = 128, 
-                L: int = 8, # если плохо учится, то ставь 2
-                feature_dim: int = 64,
-                K: int = 200,
-                H: int = 100, 
-                nhead: int = 4, 
-                dropout: float = 0.0, 
-                lstm_dim: int = 128, 
-                bidirectional: bool = True, 
-                R: int = 6, 
-                C: int = 2
-        ):
+    def __init__(
+        self,
+        N: int = 128,
+        L: int = 8,  # если плохо учится, то ставь 2
+        feature_dim: int = 64,
+        K: int = 199,
+        H: int = 100,
+        nhead: int = 4,
+        dropout: float = 0.0,
+        lstm_dim: int = 128,
+        bidirectional: bool = True,
+        R: int = 6,
+        C: int = 2,
+    ):
         super().__init__()
         self.encoder = DPTNEncoder(N, L)
-        self.separator = DPTNSeparator(feature_dim, K, H, nhead, dropout, lstm_dim, bidirectional, R, N, C)
+        self.separator = DPTNSeparator(
+            feature_dim, K, H, nhead, dropout, lstm_dim, bidirectional, R, N, C
+        )
         self.decoder = DPTNDecoder(N, L)
 
     def forward(self, mix_audio: Tensor, **batch) -> Tensor:
-
-        mix_audio = mix_audio.unsqueeze(1) # [batch, 1, T]
-        mix_enc = self.encoder(mix_audio) # [batch, N, T_new]
-        masks = self.separator(mix_enc) # [batch, C, N, T_new]
-        masked_audios = mix_enc.unsqueeze(1) * masks # [batch, C, N, T_new]
-        separated_audios = self.decoder(masked_audios) # [batch, C, T]
+        mix_audio = mix_audio.unsqueeze(1)  # [batch, 1, T]
+        mix_enc = self.encoder(mix_audio)  # [batch, N, T_new]
+        masks = self.separator(mix_enc)  # [batch, C, N, T_new]
+        masked_audios = mix_enc.unsqueeze(1) * masks  # [batch, C, N, T_new]
+        separated_audios = self.decoder(masked_audios)  # [batch, C, T]
 
         return {
             "s1_pred": separated_audios[:, 0, :],

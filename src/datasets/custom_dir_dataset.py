@@ -2,7 +2,7 @@ from pathlib import Path
 
 import torchaudio
 
-from src.asr_datasets.base_dataset import BaseDataset
+from src.datasets.base_dataset import BaseDataset
 
 
 class CustomDirDataset(BaseDataset):

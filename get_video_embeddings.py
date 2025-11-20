@@ -66,15 +66,18 @@ if __name__ == "__main__":
     url_link = os.environ.get(
         "URL_LINK", "https://drive.google.com/uc?id=1vqMpxZ5LzJjg50HlZdj_QFJGm2gQmDUD"
     )
+    if not os.path.exists("/src/data/models/"):
+        os.makedirs("/src/data/models/", exist_ok=True)
     load_path = os.environ.get(
-        "LOAD_PATH", path + "\src\data\models\lrw_resnet18_mstcn_video.pth"
+        "LOAD_PATH", path / "src" / "data" / "models" / "lrw_resnet18_mstcn_video.pth"
     )
     config_path = os.environ.get(
-        "CONFIG_PATH", path + "\src\LipReading\configs\lrw_resnet18_mstcn.json"
+        "CONFIG_PATH",
+        path / "src" / "LipReading" / "configs" / "lrw_resnet18_mstcn.json",
     )
     mouths_dir = os.environ.get(
-        "MOUTHS_DIR", path + f"\data\datasets\{avss}\dla_dataset\mouths"
+        "MOUTHS_DIR", path / "data" / "datasets" / f"{avss}" / "dla_dataset" / "mouths"
     )
-    embed_dir = os.environ.get("EMBED_DIR", path + "\src\data\embeddings")
+    embed_dir = os.environ.get("EMBED_DIR", path / "src" / "data" / "embeddings")
 
     main(url_link, load_path, config_path, mouths_dir, embed_dir)

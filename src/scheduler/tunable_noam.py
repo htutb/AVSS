@@ -1,5 +1,7 @@
 import math
+
 from torch.optim.lr_scheduler import _LRScheduler
+
 
 class TunableNoamLR(_LRScheduler):
     """
@@ -16,26 +18,35 @@ class TunableNoamLR(_LRScheduler):
         current_epoch (int): current epoch
     """
 
-    def __init__(self, optimizer, model_size, k1, k2, current_epoch, warmup_steps=4000, min_lr=0.0, last_step=-1):
+    def __init__(
+        self,
+        optimizer,
+        model_size,
+        k1,
+        k2,
+        warmup_steps=4000,
+        total_num_steps=40000,
+        min_lr=0.0,
+        last_step=-1,
+    ):
         self.model_size = model_size
         self.warmup_steps = warmup_steps
         self.min_lr = min_lr
         self.k1 = k1
         self.k2 = k2
-        self.current_epoch = current_epoch
-        super().__init__(optimizer, last_step)
+        self.total_num_steps = total_num_steps
+        super().__init__(optimizer=optimizer, last_epoch=last_step)
 
     def get_lr(self):
+        self.last_step = self.last_epoch
         step = max(1, self.last_step + 1)
+        current_epoch = self.total_num_steps // step
         if step <= self.warmup_steps:
-            lr = self.k1 * self.model_size ** (-0.5) * step * self.warmup_steps ** (-1.5)
+            lr = (
+                self.k1 * self.model_size ** (-0.5) * step * self.warmup_steps ** (-1.5)
+            )
         else:
-            lr = self.k2 * 0.98 ** (self.current_epoch // 2)
+            lr = self.k2 * 0.98 ** (current_epoch // 2)
 
         lr = max(lr, self.min_lr)
         return [lr for _ in self.base_lrs]
-
-
-
-        
-        

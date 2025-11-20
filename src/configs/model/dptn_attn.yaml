@@ -1,0 +1,2 @@
+_target_: src.model.AVDPTN
+fusion_method: "attention"
