@@ -109,8 +109,8 @@ class AttentionFusion(nn.Module):
         audio_len (int): audio length for video embedding to be interpolated
         interpolation_mode (str): defines how video embs will be interpolated to audio_len
         num_heads (int): number of heads in attention module
-        dropout (float): dropout in attention module
-        bidirectional (bool): defines whether only audio embeddings are enriched through attention or both
+        emb_dropout (float): dropout in attention module
+        bidir (bool): defines whether only audio embeddings are enriched through attention or both
 
     Input:
         [batch, audio_emb_len, audio_len] - audio embeddings
@@ -126,8 +126,8 @@ class AttentionFusion(nn.Module):
                 interpolation_mode: str,
                 d_model: int,
                 num_heads: int,
-                dropout: float,
-                bidirectional: bool,
+                emb_dropout: float,
+                bidir: bool,
             ):
         super().__init__()
         assert d_model % 2 == 0, 'd_model must be divisible by 2'
@@ -135,18 +135,18 @@ class AttentionFusion(nn.Module):
 
         self.audio_len = audio_len
         self.interpolation_mode = interpolation_mode
-        self.bidirectional = bidirectional
+        self.bidir = bidir
 
         self.video_projection_s1 = nn.Linear(video_emb_len, d_model // 2)
         self.video_projection_s2 = nn.Linear(video_emb_len, d_model // 2)
         self.audio_projection = nn.Linear(audio_emb_len, d_model)
         self.out_proj = nn.Linear(d_model * 2, audio_emb_len)
 
-        if bidirectional:
-            self.audio_video_attn = nn.MultiheadAttention(embed_dim=d_model, num_heads=num_heads, dropout=dropout)
-            self.video_audio_attn = nn.MultiheadAttention(embed_dim=d_model, num_heads=num_heads, dropout=dropout)
+        if bidir:
+            self.audio_video_attn = nn.MultiheadAttention(embed_dim=d_model, num_heads=num_heads, dropout=emb_dropout)
+            self.video_audio_attn = nn.MultiheadAttention(embed_dim=d_model, num_heads=num_heads, dropout=emb_dropout)
         else:
-            self.attn = nn.MultiheadAttention(embed_dim=d_model, num_heads=num_heads, dropout=dropout)
+            self.attn = nn.MultiheadAttention(embed_dim=d_model, num_heads=num_heads, dropout=emb_dropout)
 
     def forward(self, audio_embs: Tensor, s1_video_embs: Tensor, s2_video_embs: Tensor) -> Tensor:
         proj_audio = self.audio_projection(audio_embs.permute(0, 2, 1)) # [batch, audio_len, d_model]
@@ -159,7 +159,7 @@ class AttentionFusion(nn.Module):
         audio_attn = proj_audio.permute(1, 0, 2) # [audio_len, batch, d_model]
         video_attn = interpolated_video_embs.permute(2, 0, 1) # [audio_len, batch, d_model]
 
-        if self.bidirectional:
+        if self.bidir:
             video_attn_embs, _ = self.audio_video_attn(query=audio_attn, key=video_attn, value=video_attn) # [audio_len, batch, d_model]
             audio_attn_embs, _ = self.video_audio_attn(query=video_attn, key=audio_attn, value=audio_attn) # [audio_len, batch, d_model]
 
