@@ -16,7 +16,7 @@ class TunableNoamLR(_LRScheduler):
         current_epoch (int): current epoch
     """
 
-    def __init__(self, optimizer, model_size, warmup_steps, k1, k2, current_epoch, min_lr=0.0, last_step=-1):
+    def __init__(self, optimizer, model_size, k1, k2, current_epoch, warmup_steps=4000, min_lr=0.0, last_step=-1):
         self.model_size = model_size
         self.warmup_steps = warmup_steps
         self.min_lr = min_lr
