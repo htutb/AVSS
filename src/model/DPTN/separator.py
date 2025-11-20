@@ -205,7 +205,9 @@ class MaskCreator(nn.Module):
             in_channels=feature_dim, out_channels=feature_dim, kernel_size=1, bias=False
         )
         self.act = nn.ReLU()
-        self.mask_conv1x1 = nn.Conv1d(feature_dim, N, 1, bias=False)
+        self.mask_conv1x1 = nn.Conv1d(
+            in_channels=feature_dim, out_channels=N, kernel_size=1, bias=False
+        )
 
     def forward(self, x: Tensor) -> Tensor:
         BC, F, T_new = x.shape
