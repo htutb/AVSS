@@ -65,7 +65,8 @@ class Inferencer(BaseTrainer):
 
         # path definition
 
-        self.save_path = save_path
+        self.save_path_s1 = save_path / "s1"
+        self.save_path_s2 = save_path / "s2"
 
         # define metrics
         self.metrics = metrics
@@ -117,8 +118,6 @@ class Inferencer(BaseTrainer):
                 the dataloader (possibly transformed via batch transform)
                 and model outputs.
         """
-        # TODO change inference logic so it suits ASR assignment
-        # and task pipeline
 
         batch = self.move_batch_to_device(batch)
         batch = self.transform_batch(batch)  # transform batch on device -- faster
@@ -126,33 +125,19 @@ class Inferencer(BaseTrainer):
         outputs = self.model(**batch)
         batch.update(outputs)
 
-        if metrics is not None:
-            for met in self.metrics["inference"]:
-                metrics.update(met.name, met(**batch))
-
-        # Some saving logic. This is an example
-        # Use if you need to save predictions on disk
-
-        batch_size = batch["logits"].shape[0]
+        batch_size = batch["mix_audio"].shape[0]
         current_id = batch_idx * batch_size
 
         for i in range(batch_size):
-            # clone because of
-            # https://github.com/pytorch/pytorch/issues/1995
-            logits = batch["logits"][i].clone()
-            label = batch["labels"][i].clone()
-            pred_label = logits.argmax(dim=-1)
+            file_name = str(batch["mix_path"][i].clone())
+            s1_pred = batch["s1_pred"][i].clone()
+            s2_pred = batch["s2_pred"][i].clone()
 
-            output_id = current_id + i
+            if self.save_path_s1 is not None:
+                torch.save(s1_pred, self.save_path_s1 / "s1" / f"{file_name}")
 
-            output = {
-                "pred_label": pred_label,
-                "label": label,
-            }
-
-            if self.save_path is not None:
-                # you can use safetensors or other lib here
-                torch.save(output, self.save_path / part / f"output_{output_id}.pth")
+            if self.save_path_s2 is not None:
+                torch.save(s2_pred, self.save_path_s2 / "s2" / f"{file_name}")
 
         return batch
 
@@ -173,8 +158,11 @@ class Inferencer(BaseTrainer):
         self.evaluation_metrics.reset()
 
         # create Save dir
-        if self.save_path is not None:
-            (self.save_path / part).mkdir(exist_ok=True, parents=True)
+        if self.save_path_s1 is not None:
+            (self.save_path_s1 / part).mkdir(exist_ok=True, parents=True)
+
+        if self.save_path_s2 is not None:
+            (self.save_path_s2 / part).mkdir(exist_ok=True, parents=True)
 
         with torch.no_grad():
             for batch_idx, batch in tqdm(

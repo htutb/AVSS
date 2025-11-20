@@ -63,7 +63,6 @@ class Trainer(BaseTrainer):
 
                 if self.lr_scheduler is not None:
                     self.lr_scheduler.step()
-        print(self.lr_scheduler.get_last_lr())
 
         # update metrics for each loss (in case of multiple losses)
         with torch.no_grad():

@@ -37,7 +37,7 @@ def main(
     print(load_path)
     weights_path = load_model_from_gdown(url_link, load_path)
     lipreader = load_json_model_parameters(config_path, weights_path)
-    lipreader.eval()
+    lipreader.eval().to(device)
 
     preprocessing = get_preprocessing_pipelines(modality="video")["test"]
 
