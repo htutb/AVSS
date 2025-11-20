@@ -1,11 +1,6 @@
 import torch
 import torch.nn as nn
 from torch import Tensor
-
-# from torchmetrics.audio import (
-#     ScaleInvariantSignalDistortionRatio,
-#     ScaleInvariantSignalNoiseRatio,
-# )
 from torchmetrics.functional.audio.pesq import perceptual_evaluation_speech_quality
 from torchmetrics.functional.audio.snr import scale_invariant_signal_noise_ratio
 from torchmetrics.functional.audio.stoi import short_time_objective_intelligibility
@@ -47,17 +42,17 @@ class SNRi_Metric(nn.Module):
         s2_audio: Tensor,
         **batch
     ) -> Tensor:
-        
-        predicted_snr_s1 = scale_invariant_signal_noise_ratio(s1_pred, s1_audio) # [B]
-        predicted_snr_s2 = scale_invariant_signal_noise_ratio(s2_pred, s2_audio) # [B]
-        mix_s1_snr = scale_invariant_signal_noise_ratio(mix_audio, s1_audio) # [B]
-        mix_s2_snr = scale_invariant_signal_noise_ratio(mix_audio, s2_audio) # [B]
+        predicted_snr_s1 = scale_invariant_signal_noise_ratio(s1_pred, s1_audio)  # [B]
+        predicted_snr_s2 = scale_invariant_signal_noise_ratio(s2_pred, s2_audio)  # [B]
+        mix_s1_snr = scale_invariant_signal_noise_ratio(mix_audio, s1_audio)  # [B]
+        mix_s2_snr = scale_invariant_signal_noise_ratio(mix_audio, s2_audio)  # [B]
 
-        improvement_s1 = predicted_snr_s1 - mix_s1_snr # [B]
-        improvement_s2 = predicted_snr_s2 - mix_s2_snr # [B]
+        improvement_s1 = predicted_snr_s1 - mix_s1_snr  # [B]
+        improvement_s2 = predicted_snr_s2 - mix_s2_snr  # [B]
 
-        improvement = torch.concat([improvement_s1, improvement_s2]).mean() 
-        return improvement 
+        improvement = torch.concat([improvement_s1, improvement_s2]).mean()
+        return improvement
+
 
 class PESQ_Metric(BaseMetric):
     """

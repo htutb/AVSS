@@ -14,11 +14,16 @@ from src.utils.io_utils import ROOT_PATH
 
 def main(
     url_link: str = "https://drive.google.com/uc?id=1vqMpxZ5LzJjg50HlZdj_QFJGm2gQmDUD",
-    load_path: str = str(ROOT_PATH) + "src/data/models/lrw_resnet18_mstcn_video.pth",
-    config_path: str = str(ROOT_PATH)
-    + "src/LipReading/configs/lrw_resnet18_mstcn.json",
-    mouths_dir: str = "/dla_dataset/mouths",
-    embed_dir: str = str(ROOT_PATH) + "src/data/embeddings",
+    load_path: str = str(
+        ROOT_PATH / "src" / "data" / "models" / "lrw_resnet18_mstcn_video.pth"
+    ),
+    config_path: str = str(
+        ROOT_PATH / "src" / "LipReading" / "configs" / "lrw_resnet18_mstcn.json"
+    ),
+    mouths_dir: str = str(
+        ROOT_PATH / "data" / "datasets" / "avss" / "dla_dataset" / "mouths"
+    ),
+    embed_dir: str = str(ROOT_PATH / "src" / "data" / "embeddings"),
 ):
     """
     Loads video model and its hyperparameters using config_path and model_path,
@@ -31,10 +36,9 @@ def main(
     else:
         device = torch.device("cpu")
         print("slow inference incoming")
-
     if not os.path.exists(embed_dir):
         os.makedirs(embed_dir, exist_ok=True)
-    print(load_path)
+
     weights_path = load_model_from_gdown(url_link, load_path)
     lipreader = load_json_model_parameters(config_path, weights_path)
     lipreader.eval().to(device)
@@ -59,25 +63,26 @@ def main(
 if __name__ == "__main__":
     import os
 
-    # path = os.path.normpath(str(ROOT_PATH))
-    path = str(Path(ROOT_PATH))
-    print(path)
+    path = Path(ROOT_PATH)
     avss = "avss"
     url_link = os.environ.get(
         "URL_LINK", "https://drive.google.com/uc?id=1vqMpxZ5LzJjg50HlZdj_QFJGm2gQmDUD"
     )
-    if not os.path.exists("/src/data/models/"):
-        os.makedirs("/src/data/models/", exist_ok=True)
+    models_dir = path / "src" / "data" / "models"
+    if not os.path.exists(models_dir):
+        os.makedirs(models_dir, exist_ok=True)
     load_path = os.environ.get(
-        "LOAD_PATH", path / "src" / "data" / "models" / "lrw_resnet18_mstcn_video.pth"
+        "LOAD_PATH",
+        str(path / "src" / "data" / "models" / "lrw_resnet18_mstcn_video.pth"),
     )
     config_path = os.environ.get(
         "CONFIG_PATH",
-        path / "src" / "LipReading" / "configs" / "lrw_resnet18_mstcn.json",
+        str(path / "src" / "LipReading" / "configs" / "lrw_resnet18_mstcn.json"),
     )
     mouths_dir = os.environ.get(
-        "MOUTHS_DIR", path / "data" / "datasets" / f"{avss}" / "dla_dataset" / "mouths"
+        "MOUTHS_DIR",
+        str(path / "data" / "datasets" / f"{avss}" / "dla_dataset" / "mouths"),
     )
-    embed_dir = os.environ.get("EMBED_DIR", path / "src" / "data" / "embeddings")
+    embed_dir = os.environ.get("EMBED_DIR", str(path / "src" / "data" / "embeddings"))
 
-    main(url_link, load_path, config_path, mouths_dir, embed_dir)
+    main()
