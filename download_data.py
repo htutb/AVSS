@@ -45,7 +45,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--public-url", type=str, help="Public URL for Yandex.Disk download"
     )
-
     args = parser.parse_args()
 
     download_avss_dataset(public_url=args.public_url)
