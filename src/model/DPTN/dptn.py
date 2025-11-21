@@ -12,7 +12,6 @@ class DPTN(nn.Module):
     Args:
         N (int): number of filters in autoencoder
         L (int): length of the filters (in samples)
-        feature_dim (int): number of features in separator
         K (int): chunk length
         H (int): hop size
         nhead (int): number of heads in multi-head attention
@@ -30,11 +29,10 @@ class DPTN(nn.Module):
         self,
         N: int = 128,
         L: int = 8,  # если плохо учится, то ставь 2
-        feature_dim: int = 64,
-        K: int = 199,
-        H: int = 100,
+        K: int = 151,
+        H: int = 72,
         nhead: int = 4,
-        dropout: float = 0.0,
+        dropout: float = 0.1,
         lstm_dim: int = 128,
         bidirectional: bool = True,
         R: int = 6,
@@ -43,7 +41,7 @@ class DPTN(nn.Module):
         super().__init__()
         self.encoder = DPTNEncoder(N, L)
         self.separator = DPTNSeparator(
-            feature_dim, K, H, nhead, dropout, lstm_dim, bidirectional, R, N, C
+            K, H, nhead, dropout, lstm_dim, bidirectional, R, N, C
         )
         self.decoder = DPTNDecoder(N, L)
 

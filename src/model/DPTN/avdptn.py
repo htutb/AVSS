@@ -15,7 +15,6 @@ class AVDPTN(nn.Module):
     Args:
         N (int): number of filters in autoencoder
         L (int): length of the filters (in samples)
-        feature_dim (int): number of features in separator
         K (int): chunk length
         H (int): hop size
         nhead (int): number of heads in multi-head attention
@@ -38,17 +37,16 @@ class AVDPTN(nn.Module):
 
     def __init__(self, N: int = 128, 
                 L: int = 8,
-                feature_dim: int = 64,
-                K: int = 200,
+                K: int = 151,
                 H: int = 100, 
                 nhead: int = 4, 
-                dropout: float = 0.0, 
+                dropout: float = 0.1, 
                 lstm_dim: int = 128, 
                 bidirectional: bool = True, 
                 R: int = 6, 
                 C: int = 2,
                 fusion_method: str = 'attention',
-                audio_len: int = 7999, # если L=2, то 31999
+                audio_len: int = 7999,
                 interpolation_mode: str = 'linear',
                 d_model: int = 256,
                 num_heads: int = 4,
@@ -84,7 +82,7 @@ class AVDPTN(nn.Module):
                                     )
 
         self.encoder = DPTNEncoder(N, L)
-        self.separator = DPTNSeparator(feature_dim, K, H, nhead, dropout, lstm_dim, bidirectional, R, N, C)
+        self.separator = DPTNSeparator(K, H, nhead, dropout, lstm_dim, bidirectional, R, N, C)
         self.decoder = DPTNDecoder(N, L)
 
     def forward(self, mix_audio: Tensor, s1_embs: Tensor, s2_embs: Tensor, **batch) -> dict:

@@ -14,8 +14,8 @@ class Segmentation(nn.Module):
         K (int): chunk length
         H (int): hop size
 
-    Input: [batch, feature_dim, T_new]
-    Output: [batch, feature_dim, K, num_chunks] (num_chunks = (T_new - K) // H + 1)
+    Input: [batch, N, T_new]
+    Output: [batch, N, K, num_chunks] (num_chunks = (T_new - K) // H + 1)
     """
 
     def __init__(self, K: int, H: int):
@@ -27,11 +27,11 @@ class Segmentation(nn.Module):
         B, N, T = x.shape
         chunks = x.unfold(
             dimension=2, size=self.K, step=self.H
-        ).contiguous()  # [B, feature_dim, K, num_chunks]
+        ).contiguous()  # [B, N, K, num_chunks]
         chunks = chunks.view(B, N, self.K, -1)
         chunks = chunks.permute(
             0, 1, 3, 2
-        ).contiguous()  # [B, feature_dim, num_chunks, K]
+        ).contiguous()  # [B, N, num_chunks, K]
 
         return chunks
 
@@ -46,8 +46,8 @@ class DPTNTransformer(nn.Module):
         lstm_dim (int): dimension of LSTM layer
         bidirectional (bool): whether LSTM is bidirectional
 
-    Input: [B*num_chunks, K, feature_dim] - intra OR [B*K, num_chunks, feature_dim] - inter
-    Output: [B*num_chunks, K, feature_dim] - intra OR [B*K, num_chunks, feature_dim] - inter
+    Input: [batch * num_chunks, K, N] - intra OR [batch * K, num_chunks, N] - inter
+    Output: [batch * num_chunks, K, N] - intra OR [batch * K, num_chunks, N] - inter
     """
 
     def __init__(
@@ -96,20 +96,20 @@ class DPTNBlock(nn.Module):
     DPTN separation block
 
     Args:
-        feature_dim (int): number of features in separator
+        N (int): number of filteres in autoencoder
         nhead (int): number of heads in multi-head attention
         dropout (float): dropout in transformer
         lstm_dim (int): dimension of LSTM layer
         bidirectional (bool): whether LSTM is bidirectional
 
 
-    Input: [batch, feature_dim, K, num_chunks]
-    Output: [batch, feature_dim, K, num_chunks]
+    Input: [batch, N, num_chunks, K]
+    Output: [batch, N, num_chunks, K]
     """
 
     def __init__(
         self,
-        feature_dim: int,
+        N: int,
         nhead: int,
         dropout: float,
         lstm_dim: int,
@@ -118,32 +118,32 @@ class DPTNBlock(nn.Module):
         super().__init__()
 
         self.intra_transformer = DPTNTransformer(
-            feature_dim, nhead, dropout, lstm_dim, bidirectional
+            N, nhead, dropout, lstm_dim, bidirectional
         )
         self.inter_transformer = DPTNTransformer(
-            feature_dim, nhead, dropout, lstm_dim, bidirectional=bidirectional
+            N, nhead, dropout, lstm_dim, bidirectional=bidirectional
         )
 
     def forward(self, x: Tensor) -> Tensor:
-        B, feature_dim, num_chunks, K = x.shape
+        B, N, num_chunks, K = x.shape
 
         x = (
-            x.permute(0, 2, 3, 1).contiguous().view(B * num_chunks, K, feature_dim)
+            x.permute(0, 2, 3, 1).contiguous().view(B * num_chunks, K, N)
         )  # K - embed_dim
         x = self.intra_transformer(x)
 
         x = (
             x.contiguous()
-            .view(B, num_chunks, K, feature_dim)
+            .view(B, num_chunks, K, N)
             .permute(0, 2, 1, 3)
             .contiguous()
-            .view(B * K, num_chunks, feature_dim)
+            .view(B * K, num_chunks, N)
         )  # num_chunks - embed_dim
         x = self.inter_transformer(x)
 
         x = (
             x.contiguous()
-            .view(B, K, num_chunks, feature_dim)
+            .view(B, K, num_chunks, N)
             .permute(0, 3, 2, 1)
             .contiguous()
         )
@@ -158,8 +158,8 @@ class OverlappAdd(nn.Module):
         K (int): chunk length
         H (int): hop size
 
-    Input: [batch * C, feature_dim, K, num_chunks]
-    Output: [batch * C, feature_dim, T_new] (T_new = H * (num_chunks - 1) + K)
+    Input: [batch * C, N, num_chunks, K]
+    Output: [batch, N, T_new] (T_new = H * (num_chunks - 1) + K)
     """
 
     def __init__(self, K: int, H: int):
@@ -168,18 +168,18 @@ class OverlappAdd(nn.Module):
         self.H = H
 
     def forward(self, x: Tensor) -> Tensor:
-        BC, feature_dim, num_chunks, _ = x.shape
+        BC, N, num_chunks, _ = x.shape
         T_new = self.H * (num_chunks - 1) + self.K
 
         x = (
             x.permute(0, 1, 3, 2)
             .contiguous()
-            .view(BC, feature_dim * self.K, num_chunks)
+            .view(BC, N * self.K, num_chunks)
         )
 
         output = F.fold(
             x, kernel_size=(self.K, 1), stride=(self.H, 1), output_size=(T_new, 1)
-        )  # -> (batch_size, num_features, T_new, 1)
+        )  # [B*C, N, T_new, 1]
 
         output = output.squeeze(3)
 
@@ -191,15 +191,14 @@ class MaskCreator(nn.Module):
     Final layers after OverlapAdd module
 
     Args:
-        feature_dim (int): number of features in separator
         N (int): number of filters in autoencoder
         C (int): number of speakers
 
-    Input: [batch * C, feature_dim, T_new]
+    Input: [batch * C, N, T_new]
     Output: [batch, C, N, T_new]
     """
 
-    def __init__(self, feature_dim: int, N: int, C: int):
+    def __init__(self, N: int, C: int):
         super().__init__()
         self.C = C
         self.N = N
@@ -218,10 +217,6 @@ class MaskCreator(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         B, C, N, T_new = x.shape
 
-        # x = [self.act(self.tanh(x[:, i, :, :]) * self.sigmoid(x[:, i, :, :])) for i in range(C)]
-
-        # masks = torch.stack([i.unsqueeze(1) for i in x], dim=1)
-
         x = x.view(B * C, N, T_new)  # [B*C, N, T_new]
 
         x_tanh = self.tanh(x)  # [B*C, N, T_new]
@@ -239,7 +234,6 @@ class DPTNSeparator(nn.Module):
     Separation module in DPTN model
 
     Args:
-        feature_dim (int): number of features in separator
         K (int): chunk length
         H (int): hop size
         nhead (int): number of heads in multi-head attention
@@ -256,7 +250,6 @@ class DPTNSeparator(nn.Module):
 
     def __init__(
         self,
-        feature_dim: int,
         K: int,
         H: int,
         nhead: int,
@@ -270,18 +263,16 @@ class DPTNSeparator(nn.Module):
         super().__init__()
         self.C = C
         self.N = N
-        self.feature_dim = feature_dim
 
         self.feat_conv = nn.Conv1d(
-            in_channels=N, out_channels=feature_dim, kernel_size=1, bias=False
+            in_channels=N, out_channels=N, kernel_size=1, bias=False
         )
         self.segmentation = Segmentation(K, H)
         self.global_norm = GlobalLayerNorm(N)
-        # self.global_norm = GlobalLayerNorm(feature_dim)
 
         self.dptn_blocks = nn.ModuleList(
             [
-                DPTNBlock(feature_dim, nhead, dropout, lstm_dim, bidirectional)
+                DPTNBlock(N, nhead, dropout, lstm_dim, bidirectional)
                 for _ in range(R)
             ]
         )
@@ -294,27 +285,22 @@ class DPTNSeparator(nn.Module):
             bias=False,
         )
         self.overlap_add = OverlappAdd(K, H)
-        self.mask_creator = MaskCreator(feature_dim, N, C)
+        self.mask_creator = MaskCreator(N, C)
 
     def forward(self, x: Tensor) -> Tensor:
-        # x = self.global_norm(x)  # [B, N, T_new]
-        # x = self.feat_conv(x)  # [B, feature_dim, T_new]
 
-        x = self.segmentation(x)  # [B, feature_dim, K, num_chunks]
+        x = self.segmentation(x)  
         x = self.global_norm(x)
 
         for dptn_block in self.dptn_blocks:
             x = dptn_block(x)
 
-        x = self.act(x)  # [B, feature_dim, num_chunks, K]
-        x = self.conv2d(x)  # [B, C*feature_dim, num_chunks, K]
+        x = self.act(x)  # [batch, N, num_chunks, K]
+        x = self.conv2d(x)  # [batch, C * N, num_chunks, K]
 
-        B, _, num_chunks, K = x.shape  # [B, C*feature_dim, num_chunks, K]
-        # x = x.view(
-        #     B * self.C, self.N, num_chunks, K
-        # )  # [B*C, feature_dim, K, num_chunks]
-        x = self.overlap_add(x)  # [B, C*feature_dim, T_new]
-        x = x.view(B, self.C, self.N, -1)
+        B, _, _, K = x.shape  # [B, C * N, num_chunks, K]
+        x = self.overlap_add(x)  # [B, C*N, T_new]
+        x = x.view(B, self.C, self.N, -1) 
         masks = self.mask_creator(x)  # [B, C, N, T_new]
 
         return masks

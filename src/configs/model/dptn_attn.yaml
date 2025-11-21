@@ -1,11 +1,10 @@
 _target_: src.model.AVDPTN
 N: 128
-L: 8
-feature_dim: 64
-K: 200
-H: 100
+L: 8 
+K: 151
+H: 72
 nhead: 4
-dropout: 0.0
+dropout: 0.1
 lstm_dim: 128
 bidirectional: True
 R: 6
