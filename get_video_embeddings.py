@@ -1,8 +1,11 @@
 import os
 from pathlib import Path
 
+import hydra
 import numpy as np
 import torch
+from hydra.utils import instantiate
+from omegaconf import OmegaConf
 from tqdm import tqdm
 
 from src.LipReading.lipreading.dataloaders import get_preprocessing_pipelines
@@ -12,25 +15,27 @@ from src.utils.init_utils import load_model_from_gdown
 from src.utils.io_utils import ROOT_PATH
 
 
-def main(
-    url_link: str = "https://drive.google.com/uc?id=1vqMpxZ5LzJjg50HlZdj_QFJGm2gQmDUD",
-    load_path: str = str(
-        ROOT_PATH / "src" / "data" / "models" / "lrw_resnet18_mstcn_video.pth"
-    ),
-    config_path: str = str(
-        ROOT_PATH / "src" / "LipReading" / "configs" / "lrw_resnet18_mstcn.json"
-    ),
-    mouths_dir: str = str(
-        ROOT_PATH / "data" / "datasets" / "avss" / "dla_dataset" / "mouths"
-    ),
-    embed_dir: str = str(ROOT_PATH / "src" / "data" / "embeddings"),
-):
+@hydra.main(
+    version_base=None, config_path="src/configs", config_name="make_video_embeddings"
+)
+def main(config):
     """
     Loads video model and its hyperparameters using config_path and model_path,
     reads video from mouth_dir and stores video embeddings in embed_dir
 
     !!!!!! embed_dir must be the same in Hydra dataset config
     """
+    url_link = "https://drive.google.com/uc?id=1vqMpxZ5LzJjg50HlZdj_QFJGm2gQmDUD"
+    load_path = str(
+        ROOT_PATH / "src" / "data" / "models" / "lrw_resnet18_mstcn_video.pth"
+    )
+    config_path = str(
+        ROOT_PATH / "src" / "LipReading" / "configs" / "lrw_resnet18_mstcn.json"
+    )
+    embed_dir = str(ROOT_PATH / "src" / "data" / "embeddings")
+
+    mouths_dir = str(ROOT_PATH / config.mouths_path)
+
     if torch.cuda.is_available():
         device = torch.device("cuda")
     else:
@@ -61,28 +66,4 @@ def main(
 
 
 if __name__ == "__main__":
-    import os
-
-    path = Path(ROOT_PATH)
-    avss = "avss"
-    url_link = os.environ.get(
-        "URL_LINK", "https://drive.google.com/uc?id=1vqMpxZ5LzJjg50HlZdj_QFJGm2gQmDUD"
-    )
-    models_dir = path / "src" / "data" / "models"
-    if not os.path.exists(models_dir):
-        os.makedirs(models_dir, exist_ok=True)
-    load_path = os.environ.get(
-        "LOAD_PATH",
-        str(path / "src" / "data" / "models" / "lrw_resnet18_mstcn_video.pth"),
-    )
-    config_path = os.environ.get(
-        "CONFIG_PATH",
-        str(path / "src" / "LipReading" / "configs" / "lrw_resnet18_mstcn.json"),
-    )
-    mouths_dir = os.environ.get(
-        "MOUTHS_DIR",
-        str(path / "data" / "datasets" / f"{avss}" / "dla_dataset" / "mouths"),
-    )
-    embed_dir = os.environ.get("EMBED_DIR", str(path / "src" / "data" / "embeddings"))
-
     main()

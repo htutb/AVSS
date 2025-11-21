@@ -18,6 +18,8 @@ URL_LINKS = {
     "dataset": download_url,
 }
 
+ROOT_PATH = Path(ROOT_PATH)
+
 
 class AVSSDataset(BaseDataset):
     """
@@ -48,7 +50,7 @@ class AVSSDataset(BaseDataset):
         if embed_dir is None:
             self._embed_dir = ROOT_PATH / "src/data/embeddings"
         else:
-            self._embed_dir = Path(embed_dir)
+            self._embed_dir = ROOT_PATH / Path(embed_dir)
 
         self.embed_exists = self._embed_dir.exists() and any(self._embed_dir.iterdir())
 

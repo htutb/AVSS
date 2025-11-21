@@ -4,3 +4,5 @@ inference: # metrics that are calculated during inference (eval)
     name: "SI_SNR_Metric" # it is better to avoid spaces in names
   - _target_: src.metrics.SNRi_Metric
     name: "SNRi_Metric"
+  - _target_: src.metrics.SDRi_Metric
+    name: "SDRi_Metric"

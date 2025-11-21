@@ -3,7 +3,7 @@ defaults:
   - writer: cometml
   - metrics: train_metrics
   - datasets: train_val
-  - dataloader: 4070
+  - dataloader: example
   - transforms: example_only_instance
   - _self_
 optimizer:

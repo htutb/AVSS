@@ -8,3 +8,5 @@ inference: # metrics that are calculated during inference (eval)
     name: "PESQ_Metric"
   - _target_: src.metrics.STOI_Metric
     name: "STOI_Metric"
+  - _target_: src.metrics.SDRi_Metric
+    name: "SDRi_Metric"
