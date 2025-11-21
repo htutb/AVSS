@@ -1,2 +1,12 @@
 _target_: src.model.DPTN
-L: 8
+N: 128
+L: 8 # если плохо учится, то ставь 2
+feature_dim: 64
+K: 199
+H: 100
+nhead: 4
+dropout: 0.0
+lstm_dim: 128
+bidirectional: True
+R: 6
+C: 2

@@ -22,7 +22,7 @@ class SI_SNR_Metric(BaseMetric):
         return scale_invariant_signal_noise_ratio(preds, targets)
 
 
-class SDRi(nn.Module):
+class SDRi_Metric(nn.Module):
     """
     SDR improvement in dB
     Input: mix, preds, targers: [B, T]
