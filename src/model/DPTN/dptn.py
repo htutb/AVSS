@@ -27,7 +27,7 @@ class DPTN(nn.Module):
 
     def __init__(
         self,
-        N: int = 128,
+        N: int = 64,
         L: int = 8,  # если плохо учится, то ставь 2
         K: int = 151,
         H: int = 72,

@@ -270,12 +270,17 @@ class DPTNSeparator(nn.Module):
         self.segmentation = Segmentation(K, H)
         self.global_norm = GlobalLayerNorm(N)
 
-        self.dptn_blocks = nn.ModuleList(
-            [
-                DPTNBlock(N, nhead, dropout, lstm_dim, bidirectional)
-                for _ in range(R)
-            ]
-        )
+        self.dptn_blocks = nn.Sequential()
+
+        for _ in range(R):
+            dptn_block = DPTNBlock(
+                N=N,
+                nhead=nhead,
+                dropout=dropout,
+                lstm_dim=lstm_dim,
+                bidirectional=bidirectional,
+            )
+            self.dptn_blocks.append(dptn_block)
 
         self.act = nn.PReLU()
         self.conv2d = nn.Conv2d(
@@ -292,8 +297,7 @@ class DPTNSeparator(nn.Module):
         x = self.segmentation(x)  
         x = self.global_norm(x)
 
-        for dptn_block in self.dptn_blocks:
-            x = dptn_block(x)
+        x = self.dptn_blocks(x)  # [batch, N, num_chunks, K]
 
         x = self.act(x)  # [batch, N, num_chunks, K]
         x = self.conv2d(x)  # [batch, C * N, num_chunks, K]
