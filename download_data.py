@@ -10,11 +10,14 @@ from tqdm import tqdm
 
 
 @hydra.main(version_base=None, config_path="src/configs", config_name="download_data")
-def download_avss_dataset(data_dir="data/datasets/avss", public_url=None):
+def main(config):
+    data_dir = config.data_dir
+    public_url = config.public_url
+    file_name = config.file_name
     data_dir = Path(data_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
 
-    zip_path = data_dir / "dla_dataset.zip"
+    zip_path = data_dir / file_name
 
     print(public_url)
     api_url = f"https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key={public_url}"
@@ -41,14 +44,8 @@ def download_avss_dataset(data_dir="data/datasets/avss", public_url=None):
         zip_ref.extractall(data_dir)
 
     print("Dataset is ready")
-    print(f"Location: {data_dir / 'dla_dataset'}")
+    print(f"Location: {data_dir}")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Download AVSS dataset")
-    parser.add_argument(
-        "--public-url", type=str, help="Public URL for Yandex.Disk download"
-    )
-    args = parser.parse_args()
-
-    download_avss_dataset(public_url=args.public_url)
+    main()

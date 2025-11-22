@@ -1,3 +1,3 @@
-    data_dir: "data/datasets/avss"
-    public_url: None
-    file_name : 'dla_dataset.zip'
+data_dir: "data/datasets/avss"
+public_url: None
+file_name: 'dla_dataset.zip'
