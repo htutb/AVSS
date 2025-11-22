@@ -1,6 +1,6 @@
 _target_: src.model.DPTN
-N: 128
-L: 8 
+N: 64
+L: 8
 K: 151
 H: 72
 nhead: 4

@@ -2,10 +2,14 @@ import argparse
 import zipfile
 from pathlib import Path
 
+import hydra
 import requests
+from hydra.utils import instantiate
+from omegaconf import OmegaConf
 from tqdm import tqdm
 
 
+@hydra.main(version_base=None, config_path="src/configs", config_name="download_data")
 def download_avss_dataset(data_dir="data/datasets/avss", public_url=None):
     data_dir = Path(data_dir)
     data_dir.mkdir(parents=True, exist_ok=True)

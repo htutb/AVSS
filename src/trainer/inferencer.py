@@ -1,4 +1,5 @@
 import torch
+import torchaudio
 from tqdm.auto import tqdm
 
 from src.metrics.tracker import MetricTracker
@@ -134,10 +135,10 @@ class Inferencer(BaseTrainer):
             s2_pred = batch["s2_pred"][i].clone()
 
             if self.save_path_s1 is not None:
-                torch.save(s1_pred, self.save_path_s1 / "s1" / f"{file_name}")
+                torchaudio.save(self.save_path_s1 / f"{file_name}", s1_pred, 16000)
 
             if self.save_path_s2 is not None:
-                torch.save(s2_pred, self.save_path_s2 / "s2" / f"{file_name}")
+                torchaudio.save(self.save_path_s2 / f"{file_name}", s2_pred, 16000)
 
         return batch
 

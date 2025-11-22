@@ -1,5 +1,4 @@
 inference:
   _target_: src.datasets.CustomDirDataset
-  # part: "test"
-  embed_dir: "src/data/embeddings"
   instance_transforms: ${transforms.instance_transforms.inference}
+  dataset_dir: ${inferencer.dataset_path}

@@ -18,8 +18,8 @@ opencv-python
 black
 isort
 pre-commit
-# hydra
 wget
 thop
 gdown
 opencv-python
+yadisk

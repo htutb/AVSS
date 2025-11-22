@@ -132,7 +132,7 @@ class Trainer(BaseTrainer):
     ):
         tuples = list(zip(s1_pred, s2_pred, s1_audio, s2_audio, mix_audio, mix_path))
         si_snr = SI_SNR_Metric()
-        snri = SNRi_Metric(name="snri")
+        snri = SI_SNRi_Metric(name="snri")
         pesq = PESQ_Metric()
         stoi = STOI_Metric()
 

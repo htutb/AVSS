@@ -42,7 +42,6 @@ class SDRi_Metric(nn.Module):
         s2_audio: Tensor,
         **batch
     ) -> Tensor:
-        
         sdr_11 = signal_distortion_ratio(s1_pred, s1_audio)  # [B]
         sdr_22 = signal_distortion_ratio(s2_pred, s2_audio)  # [B]
         sdr_12 = signal_distortion_ratio(s1_pred, s2_audio)  # [B]
@@ -65,8 +64,11 @@ class SDRi_Metric(nn.Module):
         final_impr_s1 = torch.where(use_perm1, impr1_s1, impr2_s1)  # [B]
         final_impr_s2 = torch.where(use_perm1, impr1_s2, impr2_s2)  # [B]
 
-        improvement = torch.cat([final_impr_s1, final_impr_s2], dim=0).mean()
+        improvement = torch.cat(
+            [final_impr_s1.unsqueeze(0), final_impr_s2.unsqueeze(0)], dim=0
+        ).mean()
         return improvement
+
 
 class SI_SNRi_Metric(nn.Module):
     """
@@ -88,7 +90,6 @@ class SI_SNRi_Metric(nn.Module):
         s2_audio: Tensor,
         **batch
     ) -> Tensor:
-        
         si_snr_s11 = scale_invariant_signal_noise_ratio(s1_pred, s1_audio)  # [B]
         si_snr_s12 = scale_invariant_signal_noise_ratio(s1_pred, s2_audio)  # [B]
         si_snr_s21 = scale_invariant_signal_noise_ratio(s2_pred, s1_audio)  # [B]
@@ -110,7 +111,9 @@ class SI_SNRi_Metric(nn.Module):
         final_impr_s1 = torch.where(use_perm1, impr1_s1, impr2_s1)  # [B]
         final_impr_s2 = torch.where(use_perm1, impr1_s2, impr2_s2)  # [B]
 
-        improvement = torch.cat([final_impr_s1, final_impr_s2], dim=0).mean()
+        improvement = torch.cat(
+            [final_impr_s1.unsqueeze(0), final_impr_s2.unsqueeze(0)], dim=0
+        ).mean()
         return improvement
 
 

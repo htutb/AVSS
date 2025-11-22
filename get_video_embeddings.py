@@ -35,12 +35,17 @@ def main(config):
     embed_dir = str(ROOT_PATH / "src" / "data" / "embeddings")
 
     mouths_dir = str(ROOT_PATH / config.mouths_path)
+    mouths_dir = os.path.normpath(mouths_dir).replace("\\", "/")
 
     if torch.cuda.is_available():
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
         print("slow inference incoming")
+
+    if not os.path.exists(str(ROOT_PATH / "src" / "data" / "models")):
+        os.makedirs(str(ROOT_PATH / "src" / "data" / "models"), exist_ok=True)
+
     if not os.path.exists(embed_dir):
         os.makedirs(embed_dir, exist_ok=True)
 
