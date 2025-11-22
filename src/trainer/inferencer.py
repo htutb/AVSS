@@ -123,6 +123,10 @@ class Inferencer(BaseTrainer):
         batch = self.move_batch_to_device(batch)
         batch = self.transform_batch(batch)  # transform batch on device -- faster
 
+        batch["mix_audio"] = batch["mix_audio"].to(self.device)
+        batch["s1_embs"] = batch["s1_embs"].to(self.device)
+        batch["s2_embs"] = batch["s2_embs"].to(self.device)
+
         outputs = self.model(**batch)
         batch.update(outputs)
 

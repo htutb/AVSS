@@ -1,5 +1,5 @@
 defaults:
-  - model: conv_tas_net_inference
+  - model: dptn_attn
   - metrics: inference_metrics
   - datasets: inference_dataset # we do not want to run inference on training data
   - dataloader: inference

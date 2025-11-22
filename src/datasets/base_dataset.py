@@ -78,14 +78,14 @@ class BaseDataset(Dataset):
         )
 
         if data_dict.get("s1_emb_path") and Path(data_dict["s1_emb_path"]).exists():
-            with np.load(data_dict['s1_emb_path']) as data:
-                s1_emb = data['embedding']
+            with np.load(data_dict["s1_emb_path"]) as data:
+                s1_emb = data["embedding"]
         else:
             s1_emb = None
 
         if data_dict.get("s2_emb_path") and Path(data_dict["s2_emb_path"]).exists():
-            with np.load(data_dict['s2_emb_path']) as data:
-                s2_emb = data['embedding']
+            with np.load(data_dict["s2_emb_path"]) as data:
+                s2_emb = data["embedding"]
         else:
             s2_emb = None
 
@@ -105,12 +105,17 @@ class BaseDataset(Dataset):
         instance_data["mix_spectrogram"] = self.get_spectrogram(
             instance_data["mix_audio"]
         )
-        instance_data["s1_spectrogram"] = self.get_spectrogram(
-            instance_data["s1_audio"]
+        instance_data["s1_spectrogram"] = (
+            self.get_spectrogram(instance_data["s1_audio"])
+            if s1_audio is not None
+            else None
         )
-        instance_data["s2_spectrogram"] = self.get_spectrogram(
-            instance_data["s2_audio"]
+        instance_data["s2_spectrogram"] = (
+            self.get_spectrogram(instance_data["s2_audio"])
+            if s2_audio is not None
+            else None
         )
+
         return instance_data
 
     def __len__(self):

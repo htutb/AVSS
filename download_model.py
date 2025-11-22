@@ -14,7 +14,7 @@ def main(config):
     model_path = Path("models").absolute().resolve()
     model_path.mkdir(exist_ok=True, parents=True)
 
-    output_path = model_path
+    output_path = model_path / "model_best.pth"
     gdown.download(config.link, str(output_path), quiet=False)
 
 
