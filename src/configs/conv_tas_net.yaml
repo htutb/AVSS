@@ -20,7 +20,7 @@ loss_function:
 trainer:
   log_step: 10
   n_epochs: 30
-  epoch_len:
+  epoch_len: 2
   grad_accum_steps: 1
   device_tensors: ['s1_spectrogram', 's2_spectrogram', 'mix_spectrogram', 's1_audio', 's2_audio', 'mix_audio', 's1_embs', 's2_embs'] # which tensors should be on device (ex. GPU)
   resume_from: # null or path to the checkpoint dir with *.pth and config.yaml
