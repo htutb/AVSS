@@ -131,18 +131,21 @@ class Inferencer(BaseTrainer):
         batch.update(outputs)
 
         batch_size = batch["mix_audio"].shape[0]
-        current_id = batch_idx * batch_size
 
         for i in range(batch_size):
-            file_name = str(batch["mix_path"][i].clone())
-            s1_pred = batch["s1_pred"][i].clone()
-            s2_pred = batch["s2_pred"][i].clone()
+            file_name = str(batch["mix_path"][i])
+            s1_pred = batch["s1_pred"][i].clone().cpu()
+            s2_pred = batch["s2_pred"][i].clone().cpu()
 
             if self.save_path_s1 is not None:
-                torchaudio.save(self.save_path_s1 / f"{file_name}", s1_pred, 16000)
+                torchaudio.save(
+                    self.save_path_s1 / f"{file_name}", s1_pred.view(1, -1), 16000
+                )
 
             if self.save_path_s2 is not None:
-                torchaudio.save(self.save_path_s2 / f"{file_name}", s2_pred, 16000)
+                torchaudio.save(
+                    self.save_path_s2 / f"{file_name}", s2_pred.view(1, -1), 16000
+                )
 
         return batch
 
