@@ -1,7 +1,10 @@
+from pathlib import Path
+
 import torch
 import torchaudio
 from tqdm.auto import tqdm
 
+from src.metrics.metrics import *
 from src.metrics.tracker import MetricTracker
 from src.trainer.base_trainer import BaseTrainer
 
@@ -133,18 +136,18 @@ class Inferencer(BaseTrainer):
         batch_size = batch["mix_audio"].shape[0]
 
         for i in range(batch_size):
-            file_name = str(batch["mix_path"][i])
+            file_name = Path(str(batch["mix_path"][i])).stem
             s1_pred = batch["s1_pred"][i].clone().cpu()
             s2_pred = batch["s2_pred"][i].clone().cpu()
 
             if self.save_path_s1 is not None:
                 torchaudio.save(
-                    self.save_path_s1 / f"{file_name}", s1_pred.view(1, -1), 16000
+                    self.save_path_s1 / f"{file_name}.wav", s1_pred.view(1, -1), 16000
                 )
 
             if self.save_path_s2 is not None:
                 torchaudio.save(
-                    self.save_path_s2 / f"{file_name}", s2_pred.view(1, -1), 16000
+                    self.save_path_s2 / f"{file_name}.wav", s2_pred.view(1, -1), 16000
                 )
 
         return batch

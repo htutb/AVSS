@@ -56,16 +56,17 @@ def main(config):
     preprocessing = get_preprocessing_pipelines(modality="video")["test"]
 
     for file in tqdm(os.listdir(mouths_dir), desc="extracting video embeddings"):
-        full_path = os.path.join(mouths_dir, file)
-        processed_video = preprocessing(np.load(full_path)["data"])
-        torch_video = torch.FloatTensor(processed_video)[None, None, :, :, :].to(
-            device
-        )  # [1, 1, T, H, W]
-        emb = lipreader(torch_video, lengths=[50])  # [1, 50, 512]
-        emb = emb.squeeze(0).transpose(0, 1)  # [512, 50]
-        np_emb = emb.detach().cpu().numpy()
-        emb_path = os.path.join(embed_dir, file)
-        np.savez_compressed(emb_path, embedding=np_emb)
+        if ".npz" in str(file):
+            full_path = os.path.join(mouths_dir, file)
+            processed_video = preprocessing(np.load(full_path)["data"])
+            torch_video = torch.FloatTensor(processed_video)[None, None, :, :, :].to(
+                device
+            )  # [1, 1, T, H, W]
+            emb = lipreader(torch_video, lengths=[50])  # [1, 50, 512]
+            emb = emb.squeeze(0).transpose(0, 1)  # [512, 50]
+            np_emb = emb.detach().cpu().numpy()
+            emb_path = os.path.join(embed_dir, file)
+            np.savez_compressed(emb_path, embedding=np_emb)
 
     print(f"Extraction complete. Embeddings saved at {embed_dir}.")
 

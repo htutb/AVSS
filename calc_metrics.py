@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import hydra
@@ -7,12 +8,12 @@ from omegaconf import OmegaConf
 from tqdm import tqdm
 
 from src.metrics.metrics import *
+from src.utils.io_utils import ROOT_PATH
 
 
-def load_audio(self, path):
+def load_audio(path, target_sr=16000):
     audio_tensor, sr = torchaudio.load(path)
     audio_tensor = audio_tensor[0:1, :]  # remove all channels but the first
-    target_sr = self.target_sr
     if sr != target_sr:
         audio_tensor = torchaudio.functional.resample(audio_tensor, sr, target_sr)
     return audio_tensor
@@ -22,11 +23,11 @@ def load_audio(self, path):
     version_base=None, config_path="src/configs", config_name="calculate_metrics"
 )
 def main(config):
-    si_snr = SI_SNR_Metric()
-    snri = SI_SNRi_Metric(name="snri")
-    pesq = PESQ_Metric()
-    stoi = STOI_Metric()
-    sdri = SDRi_Metric()
+    si_snr = SI_SNR_Metric(name="SI_SNR_Metric")
+    snri = SI_SNRi_Metric(name="SI_SNRi_Metric")
+    pesq = PESQ_Metric(name="PESQ_Metric")
+    stoi = STOI_Metric(name="STOI_Metric")
+    sdri = SDRi_Metric(name="SDRi_Metric")
 
     si_snri_metrics = []
     si_snr_metrics = []
@@ -34,32 +35,42 @@ def main(config):
     stoi_metrics = []
     sdri_metrics = []
 
-    predictions_path_s1 = Path(config.predictions_path) / "s1"
-    predictions_path_s2 = Path(config.predictions_path) / "s2"
-    groud_truth_path_s1 = Path(config.groud_truth_path) / "s1"
-    groud_truth_path_s2 = Path(config.groud_truth_path) / "s2"
-    mix_path = Path(config.mix_path) / "mix"
+    current_path = Path().absolute().resolve()
+
+    predictions_path_s1 = current_path / Path(config.predictions_path) / "s1"
+    predictions_path_s2 = current_path / Path(config.predictions_path) / "s2"
+    groud_truth_path_s1 = current_path / Path(config.groud_truth_path) / "s1"
+    groud_truth_path_s2 = current_path / Path(config.groud_truth_path) / "s2"
+    mix_path = current_path / Path(config.mix_path) / "mix"
 
     AUDIO_EXTENSIONS = (".wav", ".flac", ".mp3", ".m4a")
 
-    for mix in sorted(mix_path.glob("*")):
-        base_name = mix.stem
+    mix_files = sorted(os.listdir(mix_path))
+
+    for mix_file in mix_files:  # Обработаем сначала 3 файла для теста
+        base_name = Path(mix_file).stem
+
         first_id, second_id = base_name.split("_")
 
+        s1_gt = None
+        s2_gt = None
+
         for ext in AUDIO_EXTENSIONS:
-            s1_gt = groud_truth_path_s1 / f"{base_name}{ext}"
-            s2_gt = groud_truth_path_s2 / f"{base_name}{ext}"
+            s1_gt_cand = groud_truth_path_s1 / f"{base_name}{ext}"
+            s2_gt_cand = groud_truth_path_s2 / f"{base_name}{ext}"
+
+            if s1_gt_cand.exists() and s1_gt is None:
+                s1_gt = s1_gt_cand
+                print(f"Found s1_gt: {s1_gt}")
+            if s2_gt_cand.exists() and s2_gt is None:
+                s2_gt = s2_gt_cand
 
         s1_pred = predictions_path_s1 / f"{base_name}.wav"
         s2_pred = predictions_path_s2 / f"{base_name}.wav"
 
-        mix = str(mix.resolve())
-        s1_gt = str(s1_gt.resolve())
-        s2_gt = str(s2_gt.resolve())
-        s1_pred = str(s1_pred.resolve())
-        s2_pred = str(s2_pred.resolve())
+        mix_audio_path = mix_path / mix_file
 
-        mix_audio = load_audio(mix)
+        mix_audio = load_audio(mix_audio_path)
         s1_gt_audio = load_audio(s1_gt)
         s2_gt_audio = load_audio(s2_gt)
         s1_pred_audio = load_audio(s1_pred)
