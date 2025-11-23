@@ -57,7 +57,13 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 
 ## How To Use
 
-Firstly, install model for video embeddings:
+(Optional) If you do not have your datab for inference locally, dowload it from Yandex Disk with script:
+
+```bash
+python3 download_data.py --config-name download_data ++data_dir="data_dir" ++public_url='Link to your dataset' ++file_name="your file name.zip"
+```
+
+Install model for video embeddings:
 
 ```bash
 python3 get_video_embeddings.py -cn=make_video_embeddings mouths_path="data_dir\mouths"
