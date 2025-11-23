@@ -1,5 +1,5 @@
 defaults:
-  - model: dptn
+  - model: dptn_attn
   - writer: cometml
   - metrics: train_metrics
   - datasets: train_val
