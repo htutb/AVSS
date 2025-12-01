@@ -1,4 +1,10 @@
-# Bridging Audio and Audio-Visual Source Separation: A Review and Experimental Evaluation of Modern Models
+<div align="center">
+
+# Audio and Audio-Visual Source Separation: A Comparative Study
+
+[\[Report\]](src/docs/paper.pdf)
+
+</div>
 
 <p align="center">
   <a href="#about">About</a> •
