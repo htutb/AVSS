@@ -2,7 +2,7 @@
 
 # Audio and Audio-Visual Source Separation: A Comparative Study
 
-[\[Report\]](src/docs/paper.pdf)
+[\[Report\]](paper/paper.pdf)
 
 </div>
 
